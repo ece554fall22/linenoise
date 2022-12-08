@@ -131,6 +131,7 @@ static int mlmode = 0;  /* Multi line mode. Default is single line. */
 static int atexit_registered = 0; /* Register atexit just 1 time. */
 static int history_max_len = LINENOISE_DEFAULT_HISTORY_MAX_LEN;
 static int history_len = 0;
+static int signaled_ctrlc = 0;
 static char **history = NULL;
 
 /* The linenoiseState structure represents the state during line editing.
@@ -197,6 +198,12 @@ FILE *lndebug_fp = NULL;
 #endif
 
 /* ======================= Low level terminal handling ====================== */
+
+int linenoiseInterrupted(void) {
+    int v = signaled_ctrlc;
+    signaled_ctrlc = 0;
+    return v;
+}
 
 /* Enable "mask mode". When it is enabled, instead of the input that
  * the user is typing, the terminal will just display a corresponding
@@ -853,6 +860,7 @@ static int linenoiseEdit(int stdin_fd, int stdout_fd, char *buf, size_t buflen, 
             return (int)l.len;
         case CTRL_C:     /* ctrl-c */
             errno = EAGAIN;
+            signaled_ctrlc = 1;
             return -1;
         case BACKSPACE:   /* backspace */
         case 8:     /* ctrl-h */
